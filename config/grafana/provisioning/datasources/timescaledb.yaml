@@ -1,0 +1,21 @@
+apiVersion: 1
+
+datasources:
+  - name: Tranquility TimescaleDB
+    uid: tranquility-timescaledb
+    type: postgres
+    access: proxy
+    url: tranquility-timescaledb:5432
+    user: ${GRAFANA_DB_USER}
+
+    secureJsonData:
+      password: ${GRAFANA_DB_PASSWORD}
+
+    jsonData:
+      database: tranquility
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: true
+
+    isDefault: true
+    editable: false
