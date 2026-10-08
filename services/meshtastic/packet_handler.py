@@ -5,6 +5,7 @@ def process_packet(packet):
     packet_type = packet.get("decoded", {}).get("portnum")
     if packet_type == "TELEMETRY_APP":
         print("Telemetry packet received")
+        print(packet)
     elif packet_type == "TEXT_MESSAGE_APP":
         print("Text message received")
     else:
