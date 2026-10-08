@@ -1,0 +1,11 @@
+def process_packet(packet):
+    if packet is None:
+        return
+        
+    packet_type = packet.get("decoded", {}).get("portnum")
+    if packet_type == "TELEMETRY_APP":
+        print("Telemetry packet received")
+    elif packet_type == "TEXT_MESSAGE_APP":
+        print("Text message received")
+    else:
+        print("Other packet type received")
