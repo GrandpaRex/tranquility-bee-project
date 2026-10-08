@@ -9,3 +9,9 @@ def process_packet(packet):
         print("Text message received")
     else:
         print("Other packet type received")
+        
+    sender = packet.get("fromId", "Missing")
+    receiver = packet.get("toId", "Missing")
+    rssi = packet.get("rxRssi")
+    snr = packet.get("rxSnr")
+    print(f"From: {sender} | To: {receiver} | RSSI: {rssi} | SNR: {snr}")
