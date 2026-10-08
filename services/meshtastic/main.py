@@ -5,7 +5,7 @@ import time
 
 def on_receive(packet, interface):
     print("Packet received!")
-    if packet is not None
+    if packet is not None:
         print(packet)
     
 def serial_interface():
