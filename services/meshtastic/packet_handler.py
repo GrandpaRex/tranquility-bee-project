@@ -9,6 +9,8 @@ def process_packet(packet):
         rssi = packet.get("rxRssi")
         snr = packet.get("rxSnr")
         metrics = packet.get("decoded", {}).get("telemetry", {}).get("deviceMetrics", {})
+        if not metrics:
+            return None
         battery = metrics.get("batteryLevel")
         voltage = metrics.get("voltage")
         channel = metrics.get("channelUtilization")
@@ -17,15 +19,15 @@ def process_packet(packet):
         if metrics.get("uptimeSeconds") is not None:
             uptime_hours = metrics.get("uptimeSeconds") // 3600
         record = {
-             "sender" = sender,
-             "receiver" = receiver,
-             "rssi" = rssi,
-             "snr" = snr,
-             "battery" = battery,
-             "voltage" = voltage,
-             "channel" = channel,
-             "airtime" = airtime,
-             "uptime_hours" = uptime_hours
+             "sender": sender,
+             "receiver": receiver,
+             "rssi": rssi,
+             "snr": snr,
+             "battery": battery,
+             "voltage": voltage,
+             "channel": channel,
+             "airtime": airtime,
+             "uptime_hours": uptime_hours
         }
         return record
     elif packet_type == "TEXT_MESSAGE_APP":
