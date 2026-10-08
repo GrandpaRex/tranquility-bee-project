@@ -4,7 +4,10 @@ def process_packet(packet):
         
     packet_type = packet.get("decoded", {}).get("portnum")
     if packet_type == "TELEMETRY_APP":
-        print("Telemetry packet received")
+        sender = packet.get("fromId", "Missing")
+        receiver = packet.get("toId", "Missing")
+        rssi = packet.get("rxRssi")
+        snr = packet.get("rxSnr")
         metrics = packet.get("decoded", {}).get("telemetry", {}).get("deviceMetrics", {})
         battery = metrics.get("batteryLevel")
         voltage = metrics.get("voltage")
@@ -13,19 +16,19 @@ def process_packet(packet):
         uptime_hours = None
         if metrics.get("uptimeSeconds") is not None:
             uptime_hours = metrics.get("uptimeSeconds") // 3600
-        print("___Metrics___")
-        print(f"Battery level: {battery}")
-        print(f"Voltage: {voltage}")
-        print(f"Channel utilization: {channel}")
-        print(f"Airtime: {airtime}")
-        print(f"Uptime hours: {uptime_hours}")
+        record = {
+             "sender" = sender,
+             "receiver" = receiver,
+             "rssi" = rssi,
+             "snr" = snr,
+             "battery" = battery,
+             "voltage" = voltage,
+             "channel" = channel,
+             "airtime" = airtime,
+             "uptime_hours" = uptime_hours
+        }
+        return record
     elif packet_type == "TEXT_MESSAGE_APP":
         print("Text message received")
     else:
         print("Other packet type received")
-        
-    sender = packet.get("fromId", "Missing")
-    receiver = packet.get("toId", "Missing")
-    rssi = packet.get("rxRssi")
-    snr = packet.get("rxSnr")
-    print(f"From: {sender} | To: {receiver} | RSSI: {rssi} | SNR: {snr}")
