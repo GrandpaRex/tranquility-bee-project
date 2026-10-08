@@ -1,12 +1,11 @@
 import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
+from packet_handler import process_packet
 import time
 
 def on_receive(packet, interface):
-    print("Packet received!")
-    if packet is not None:
-        print(packet)
+    process_packet(packet)
     
 def serial_interface():
     serialInterface = meshtastic.serial_interface.SerialInterface(devPath="/dev/ttyACM0")
