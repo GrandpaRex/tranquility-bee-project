@@ -38,6 +38,9 @@ services:
       - /srv/tranquility/mqtt/secrets/passwords:/mosquitto/secrets/passwords:ro
       - /srv/tranquility/mqtt/data:/mosquitto/data
       - /srv/tranquility/mqtt/log:/mosquitto/log
+    
+    ports:
+      - "127.0.0.1:1883:1883"
 
     networks:
       - tranquility-net
