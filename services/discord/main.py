@@ -52,6 +52,11 @@ def on_mqtt_connect(client, userdata, flags, reason_code, properties):
 def on_mqtt_message(client, userdata, message):
     payload = message.payload.decode("utf-8")
     print(f"[MQTT] Received: {payload}")
+    record = json.loads(payload)
+    sender = record.get("sender")
+    voltage = record.get("voltage")
+    battery = record.get("battery")
+    print(f"Sender: {sender} | Voltage: {voltage} | Battery: {battery}")
     
 if __name__ == "__main__":
     mqtt_client = None
