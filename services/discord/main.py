@@ -23,17 +23,7 @@ discord_client = discord.Client(intents=intents)
 @discord_client.event
 async def on_ready():
     print(f"Logged in as {discord_client.user}")
-    embed = discord.Embed(
-        title="🐝 Tranquility Bee Monitor",
-        description="Telemetry monitoring system initialized.",
-        color=discord.Color.green()
-    )
-
-    embed.add_field(
-        name="📡 THG1 Gateway",
-        value="Awaiting telemetry...",
-        inline=False
-    )
+    embed = build_status_embed()
     
     channel = discord_client.get_channel(channel_id)
     if channel is not None:
@@ -43,6 +33,9 @@ async def on_ready():
         print(f"[Discord] Status message ID: {message.id}")
     else:
         print(f"[Discord] Channel {channel_id} not found")
+
+    if not hasattr(discord_client, "status_task"):
+        discord_client.status_task = asyncio.create_task(update_status_embed())
 
 def on_mqtt_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
@@ -70,6 +63,38 @@ def store_telemetry(record):
         return
     latest_telemetry[sender] = record
     print(f"[Telemetry] Tracking {len(latest_telemetry)} node(s): {list(latest_telemetry.keys())}")
+
+def build_status_embed():
+    embed = discord.Embed(
+        title="🐝 Tranquility Bee Monitor",
+        description="Telemetry monitoring system initialized.",
+        color=discord.Color.green()
+    )
+
+    for sender, record in latest_telemetry.items():
+        battery = record.get("battery")
+        voltage = record.get("voltage")
+        embed.add_field(
+            name=f"📡 Node: {sender}",
+            value=f"Node: {sender} \nBattery: {battery} \nVoltage: {voltage} V",
+            inline=False
+        )
+    return embed
+
+async def update_status_embed():
+    channel = discord_client.get_channel(channel_id)
+
+    if channel is None:
+        print("[Discord] Status channel not found")
+        return
+
+    message = await channel.fetch_message(message_id)
+
+    while not discord_client.is_closed():
+        embed = build_status_embed()
+        await message.edit(embed=embed)
+        print("[Discord] Status embed updated")
+        await asyncio.sleep(30)
     
 if __name__ == "__main__":
     mqtt_client = None
