@@ -3,6 +3,7 @@ import os
 import paho.mqtt.client as mqtt
 import json
 from services.common.mqtt_client import create_mqtt_client
+import asyncio
 
 
 token = os.getenv("DISCORD_BOT_TOKEN")
@@ -14,13 +15,14 @@ message_id = os.getenv("DISCORD_STATUS_MESSAGE_ID")
 if message_id is None:
     raise  ValueError("Discord status message ID is missing")
 message_id = int(message_id)
+latest_telemetry = {}
 
 intents = discord.Intents.default()
-client = discord.Client(intents=intents)
+discord_client = discord.Client(intents=intents)
 
-@client.event
+@discord_client.event
 async def on_ready():
-    print(f"Logged in as {client.user}")
+    print(f"Logged in as {discord_client.user}")
     embed = discord.Embed(
         title="🐝 Tranquility Bee Monitor",
         description="Telemetry monitoring system initialized.",
@@ -33,7 +35,7 @@ async def on_ready():
         inline=False
     )
     
-    channel = client.get_channel(channel_id)
+    channel = discord_client.get_channel(channel_id)
     if channel is not None:
         message = await channel.fetch_message(message_id)
         await message.edit(embed=embed)
@@ -48,15 +50,25 @@ def on_mqtt_connect(client, userdata, flags, reason_code, properties):
         client.subscribe("tranquility/telemetry/device", qos=1)
     else:
         print(f"[MQTT] Connection failed: {reason_code}")
-    
+
 def on_mqtt_message(client, userdata, message):
     payload = message.payload.decode("utf-8")
     print(f"[MQTT] Received: {payload}")
-    record = json.loads(payload)
+
+    try:
+        record = json.loads(payload)
+    except json.JSONDecodeError:
+        print("[MQTT] Invalid JSON received")
+        return
+
+    if discord_client.is_ready():
+        discord_client.loop.call_soon_threadsafe(store_telemetry, record)
+    
+def store_telemetry(record):
     sender = record.get("sender")
-    voltage = record.get("voltage")
-    battery = record.get("battery")
-    print(f"Sender: {sender} | Voltage: {voltage} | Battery: {battery}")
+    if sender is None:
+        return
+    latest_telemetry[sender] = record
     
 if __name__ == "__main__":
     mqtt_client = None
@@ -69,7 +81,7 @@ if __name__ == "__main__":
         mqtt_client.loop_start()
 
         if token is not None:
-            client.run(token)
+            discord_client.run(token)
         else:
             print("Discord bot token is missing")
     finally:
