@@ -1,10 +1,16 @@
+from sender_auth import is_approved
 def process_packet(packet):
     if packet is None:
         return
         
     packet_type = packet.get("decoded", {}).get("portnum")
     if packet_type == "TELEMETRY_APP":
-        sender = packet.get("fromId", "Missing")
+        sender = packet.get("fromId") or packet.get("from")
+        if isinstance(sender, int):
+            sender = f"!{sender:08x}"
+        if not is_approved(sender):
+            print(f"[Auth] Rejected packet from {sender}")
+            return None
         receiver = packet.get("toId", "Missing")
         rssi = packet.get("rxRssi")
         snr = packet.get("rxSnr")
