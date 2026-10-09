@@ -2,7 +2,7 @@
 import os
 import paho.mqtt.client as mqtt
 import json
-from services.meshtastic.mqtt_publisher import create_mqtt_client
+from services.common.mqtt_client import create_mqtt_client
 
 
 token = os.getenv("DISCORD_BOT_TOKEN")
@@ -41,17 +41,32 @@ async def on_ready():
         print(f"[Discord] Status message ID: {message.id}")
     else:
         print(f"[Discord] Channel {channel_id} not found")
+
+def on_mqtt_connect(client, userdata, flags, reason_code, properties):
+    if reason_code == 0:
+        print("[MQTT] Discord bot connected")
+        client.subscribe("tranquility/telemetry/device", qos=1)
+    else:
+        print(f"[MQTT] Connection failed: {reason_code}")
+    
+def on_mqtt_message(client, userdata, message):
+    payload = message.payload.decode("utf-8")
+    print(f"[MQTT] Received: {payload}")
     
 if __name__ == "__main__":
     mqtt_client = None
-    
-    if token is not None:
-        client.run(token)
-    else:
-        print("Discord bot token is missing")
         
     try:
         mqtt_client = create_mqtt_client("tranquility-discord")
+        mqtt_client.on_connect = on_mqtt_connect
+        mqtt_client.on_message = on_mqtt_message
+        mqtt_client.connect("127.0.0.1", 1883, 60)
+        mqtt_client.loop_start()
+
+        if token is not None:
+            client.run(token)
+        else:
+            print("Discord bot token is missing")
     finally:
         if mqtt_client is not None:
             mqtt_client.disconnect()
