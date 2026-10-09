@@ -1,4 +1,4 @@
-from sender_auth import is_approved
+from .sender_auth import is_approved
 def process_packet(packet):
     if packet is None:
         return

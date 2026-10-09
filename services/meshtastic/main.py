@@ -1,7 +1,7 @@
 import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
-from packet_handler import process_packet
+from services.meshtastic.packet_handler import process_packet
 import time
 
 def on_receive(packet, interface):
