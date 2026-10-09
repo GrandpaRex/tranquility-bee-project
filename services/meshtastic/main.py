@@ -2,7 +2,8 @@ import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
 from services.meshtastic.packet_handler import process_packet
-from services.meshtastic.mqtt_publisher import create_mqtt_client, serialize_telemetry
+from services.meshtastic.mqtt_publisher import serialize_telemetry
+from services.common.mqtt_client import create_mqtt_client
 import time
 
 def on_receive(packet, interface, mqtt_client):
@@ -30,7 +31,7 @@ if __name__ == '__main__':
     mqtt_client = None
     
     try:
-        mqtt_client = create_mqtt_client()
+        mqtt_client = create_mqtt_client("tranquility-thg1")
         mqtt_client.connect("127.0.0.1", 1883, 60)
         mqtt_client.loop_start()
         def receive_callback(packet, interface):
