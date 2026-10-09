@@ -2,10 +2,19 @@ import meshtastic
 import meshtastic.serial_interface
 from pubsub import pub
 from services.meshtastic.packet_handler import process_packet
+from services.meshtastic.mqtt_publisher import create_mqtt_client, serialize_telemetry
 import time
 
-def on_receive(packet, interface):
-    process_packet(packet)
+def on_receive(packet, interface, mqtt_client):
+    record = process_packet(packet)
+    if record is not None:
+        message = serialize_telemetry(record)
+        result = mqtt_client.publish(
+            "tranquility/telemetry/device",
+            message,
+            qos=1
+        )
+        print(f"[MQTT] Publish queued: {result.rc}")
     
 def serial_interface():
     serialInterface = meshtastic.serial_interface.SerialInterface(devPath="/dev/ttyACM0")
@@ -18,9 +27,16 @@ def shutdown(connection):
     
 if __name__ == '__main__':
     connection = None
+    mqtt_client = None
     
     try:
-        pub.subscribe(on_receive, "meshtastic.receive")
+        mqtt_client = create_mqtt_client()
+        mqtt_client.connect("127.0.0.1", 1883, 60)
+        mqtt_client.loop_start()
+        def receive_callback(packet, interface):
+            on_receive(packet, interface, mqtt_client)
+            
+        pub.subscribe(receive_callback, "meshtastic.receive")
         connection = serial_interface()
         while True:
             time.sleep(1)
@@ -29,4 +45,7 @@ if __name__ == '__main__':
     except Exception as error:
         print(f"THG1 error: {error}")
     finally:
+        if mqtt_client is not None:
+            mqtt_client.disconnect()
+            mqtt_client.loop_stop()
         shutdown(connection)
