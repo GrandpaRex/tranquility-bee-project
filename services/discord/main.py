@@ -69,6 +69,7 @@ def store_telemetry(record):
     if sender is None:
         return
     latest_telemetry[sender] = record
+    print(f"[Telemetry] Tracking {len(latest_telemetry)} node(s): {list(latest_telemetry.keys())}")
     
 if __name__ == "__main__":
     mqtt_client = None
