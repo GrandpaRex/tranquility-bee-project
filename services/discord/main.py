@@ -6,6 +6,10 @@ channel_id = os.getenv("DISCORD_STATUS_CHANNEL_ID")
 if channel_id is None:
     raise ValueError("Discord status channel ID is missing")
 channel_id = int(channel_id)
+message_id = os.getenv("DISCORD_STATUS_MESSAGE_ID")
+if message_id is None:
+    raise  ValueError("Discord status message ID is missing")
+message_id = int(message_id)
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -27,8 +31,10 @@ async def on_ready():
     
     channel = client.get_channel(channel_id)
     if channel is not None:
-        await channel.send(embed=embed)
+        message = await channel.fetch_message(message_id)
+        await message.edit(embed=embed)
         print("[Discord] Status embed set")
+        print(f"[Discord] Status message ID: {message.id}")
     else:
         print(f"[Discord] Channel {channel_id} not found")
     
