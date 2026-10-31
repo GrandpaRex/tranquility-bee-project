@@ -17,6 +17,12 @@ if message_id is None:
     raise  ValueError("Discord status message ID is missing")
 NODE_MESSAGES_FILE = "/srv/tranquility/discord/node_messages.json"
 message_id = int(message_id)
+# Restore the current status message ID if one was saved
+try:
+    with open(STATUS_MESSAGE_FILE, "r") as file:
+        message_id = int(file.read().strip())
+except FileNotFoundError:
+    pass
 latest_telemetry = {}
 last_heard = {}
 node_message_ids = {}
@@ -24,22 +30,52 @@ node_message_ids = {}
 intents = discord.Intents.default()
 discord_client = discord.Client(intents=intents)
 
+async def update_bot_message(channel, embed):
+    global message_id
+
+    try:
+        # Try to update the existing status message
+        message = await channel.fetch_message(message_id)
+        await message.edit(embed=embed)
+
+    except discord.NotFound:
+        # The old message was deleted, so recreate it
+        print("[Discord] Main status message missing. Recreating...")
+
+        message = await channel.send(embed=embed)
+        message_id = message.id
+
+        # Save the replacement message ID
+        temp_file = STATUS_MESSAGE_FILE + ".tmp"
+
+        with open(temp_file, "w") as file:
+            file.write(str(message_id))
+
+        os.replace(temp_file, STATUS_MESSAGE_FILE)
+
+        print(f"[Discord] New status message ID: {message_id}")
+
+    return message
+
 @discord_client.event
 async def on_ready():
     print(f"Logged in as {discord_client.user}")
-    embed = build_bot_embed()
-    
+
     channel = discord_client.get_channel(channel_id)
+
     if channel is not None:
-        message = await channel.fetch_message(message_id)
-        await message.edit(embed=embed)
+        embed = build_bot_embed()
+        message = await update_bot_message(channel, embed)
+
         print("[Discord] Status embed set")
         print(f"[Discord] Status message ID: {message.id}")
     else:
         print(f"[Discord] Channel {channel_id} not found")
 
     if not hasattr(discord_client, "status_task"):
-        discord_client.status_task = asyncio.create_task(update_status_embed())
+        discord_client.status_task = asyncio.create_task(
+            update_status_embed()
+        )
 
 def on_mqtt_connect(client, userdata, flags, reason_code, properties):
     if reason_code == 0:
@@ -219,13 +255,14 @@ async def update_status_embed():
         print("[Discord] Status channel not found")
         return
 
-    message = await channel.fetch_message(message_id)
-
     while not discord_client.is_closed():
         embed = build_bot_embed()
-        await message.edit(embed=embed)
+
+        await update_bot_message(channel, embed)
         print("[Discord] Status embed updated")
+
         await update_node_embeds()
+
         await asyncio.sleep(30)
     
 if __name__ == "__main__":
