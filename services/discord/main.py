@@ -17,6 +17,7 @@ if message_id is None:
     raise  ValueError("Discord status message ID is missing")
 message_id = int(message_id)
 latest_telemetry = {}
+last_heard = {}
 
 intents = discord.Intents.default()
 discord_client = discord.Client(intents=intents)
@@ -62,7 +63,12 @@ def store_telemetry(record):
     sender = record.get("sender")
     if sender is None:
         return
+    # Save the latest telemetry received from this node
     latest_telemetry[sender] = record
+    
+    # Record when the homehost received this telemetry
+    last_heard[sender] = discord.utils.utcnow()
+    
     print(f"[Telemetry] Tracking {len(latest_telemetry)} node(s): {list(latest_telemetry.keys())}")
 
 def build_status_embed():
@@ -75,11 +81,37 @@ def build_status_embed():
     for sender, record in latest_telemetry.items():
         battery = record.get("battery")
         voltage = record.get("voltage")
+        
+        # Meshtastic uses values above 100 for external power
+        if isinstance(battery, (int, float)) and battery > 100:
+            battery_display = "External Power"
+        elif battery is None:
+            battery_display = "Unkown"
+        else:
+            battery_display = f"{battery}%"
+        
+        voltage_display = (
+            f"{voltage} V" if voltage is not None else "Unkown"
+        )
+        
+        # Display the last received telemetry time for this node
+        heard_at = last_heard.get(sender)
+        heard_display = (
+            discord.utils.format_dt(heard_at, style="R")
+            if heard_at else "Unkown"
+        )
+        
         embed.add_field(
             name=f"📡 Node: {sender}",
-            value=f"Node: {sender} \nBattery: {battery} \nVoltage: {voltage} V",
+            value=(
+                f"Battery: {battery} \n"
+                f"Voltage: {voltage} V\n"
+                f"📶 Last Heard: {heard_display}"
+            ),
             inline=False
         )
+        
+        # The Discord embed refreshes every 30 seconds
         embed.add_field(
             name="🕒 Last Updated",
             value=discord.utils.format_dt(
