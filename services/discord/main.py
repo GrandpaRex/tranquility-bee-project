@@ -4,6 +4,7 @@ import paho.mqtt.client as mqtt
 import json
 from services.common.mqtt_client import create_mqtt_client
 import asyncio
+import time
 
 
 token = os.getenv("DISCORD_BOT_TOKEN")
@@ -77,6 +78,13 @@ def build_status_embed():
         embed.add_field(
             name=f"📡 Node: {sender}",
             value=f"Node: {sender} \nBattery: {battery} \nVoltage: {voltage} V",
+            inline=False
+        )
+        embed.add_field(
+            name="🕒 Last Updated",
+            value=discord.utils.format_dt(
+              discord.utils.utcnow(), style="T"  
+            ),
             inline=False
         )
     return embed
