@@ -16,6 +16,7 @@ message_id = os.getenv("DISCORD_STATUS_MESSAGE_ID")
 if message_id is None:
     raise  ValueError("Discord status message ID is missing")
 NODE_MESSAGES_FILE = "/srv/tranquility/discord/node_messages.json"
+STATUS_MESSAGE_FILE = "/srv/tranquility/discord/status_message_id.txt"
 message_id = int(message_id)
 # Restore the current status message ID if one was saved
 try:
