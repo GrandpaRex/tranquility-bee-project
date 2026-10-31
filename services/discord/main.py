@@ -86,26 +86,26 @@ def build_status_embed():
         if isinstance(battery, (int, float)) and battery > 100:
             battery_display = "External Power"
         elif battery is None:
-            battery_display = "Unkown"
+            battery_display = "Unknown"
         else:
             battery_display = f"{battery}%"
         
         voltage_display = (
-            f"{voltage} V" if voltage is not None else "Unkown"
+            f"{voltage} V" if voltage is not None else "Unknown"
         )
         
         # Display the last received telemetry time for this node
         heard_at = last_heard.get(sender)
         heard_display = (
             discord.utils.format_dt(heard_at, style="R")
-            if heard_at else "Unkown"
+            if heard_at else "Unknown"
         )
         
         embed.add_field(
             name=f"📡 Node: {sender}",
             value=(
-                f"Battery: {battery} \n"
-                f"Voltage: {voltage} V\n"
+                f"Battery: {battery_display}\n"
+                f"Voltage: {voltage_display}\n"
                 f"📶 Last Heard: {heard_display}"
             ),
             inline=False
